@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Depends, HTTPException
+from fastapi import FastAPI, Depends, HTTPException, Request
 from fastapi.security import OAuth2PasswordBearer
 import jwt
 from datetime import datetime, timedelta
@@ -16,6 +16,8 @@ ACCESS_TOKEN_EXPIRE = 30
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/login")
 
+templates = Jinja2Templates(directory="views")
+
 
 def create_token(data: dict, expire_delta: timedelta):
     to_encode = data.copy()
@@ -24,13 +26,18 @@ def create_token(data: dict, expire_delta: timedelta):
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm="HS256")
     return encoded_jwt
 
-
+@app.get("/register")
+def register_page(request: Request):
+    return templates.TemplateResponse("register.html", {"request": request})
 @app.post("/register")
 async def register_user(credentials: users.UserLogin):
     expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE)
     access_token = create_token(data={"username": credentials.username}, expire_delta=expires)
     return {"access_token": access_token, "token_type": "bearer"}
 
+@app.get("/login")
+def login_page(request: Request):
+    return templates.TemplateResponse("login.html", {"request": request})
 
 @app.post("/login")
 async def user_login(credentials: users.UserLogin):
