@@ -4,6 +4,7 @@ import jwt
 from datetime import datetime, timedelta
 from pydantic import BaseModel
 from models import users
+from fastapi.templating import Jinja2Templates
 
 # from models.users import UserLogin
 
