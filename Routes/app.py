@@ -39,19 +39,13 @@ async def register_user(credentials: users.UserLogin):
     return {"access_token": access_token, "token_type": "bearer"}
 
 
+@app.get("/login")
+def login_page(request: Request):
+    return templates.TemplateResponse("login.html", {"request": request})
+
+
 @app.post("/login")
 async def user_login(credentials: users.UserLogin):
     expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE)
     access_token = create_token(data={"username": credentials.username}, expire_delta=expires)
     return {"access_token": access_token, "token_type": "bearer"}
-
-
-@app.get("/protected")
-def protected_route(token: str = Depends(oauth2_scheme)):
-    try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
-        username = payload.get("username")
-
-        return {"message": f"Protected route accessed by {username}"}
-    except jwt.PyJWTError:
-        raise HTTPException(status_code=401, detail="Invalid token")
