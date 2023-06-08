@@ -1,33 +1,49 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends, HTTPException
+from fastapi.security import OAuth2PasswordBearer
+import jwt
+from datetime import datetime, timedelta
 from pydantic import BaseModel
-from fastapi.security import HTTPBasic, HTTPBasicCredentials
+from models import users
+
+# from models.users import UserLogin
 
 app = FastAPI()
 
-users = {}
+SECRET_KEY = "87f2c2be95c484df33a2a438a8a0284bd0cf79d8497d1b53e20f3ba9162b5e6e"
+
+ACCESS_TOKEN_EXPIRE = 30
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/login")
 
 
-class User(BaseModel):
-    username: str
-    password: str
-
-
-security = HTTPBasic()
+def create_token(data: dict, expire_delta: timedelta):
+    to_encode = data.copy()
+    expire = datetime.utcnow() + expire_delta
+    to_encode.update({"exp": expire})
+    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm="HS256")
+    return encoded_jwt
 
 
 @app.post("/register")
-def register_user(user: User):
-    if user.username in users:
-        return {"message": "Username not available"}
+async def register_user(credentials: users.UserLogin):
+    expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE)
+    access_token = create_token(data={"username": credentials.username}, expire_delta=expires)
+    return {"access_token": access_token, "token_type": "bearer"}
 
-    users[user.username] = user.password
-    return {"message": "User registered successfully"}
 
 @app.post("/login")
-def user_login(credentials: HTTPBasicCredentials):
-    if credentials.username not in users or users[credentials.username] != credentials.password:
-        return {"message": "Invalid User Credentials"}
+async def user_login(credentials: users.UserLogin):
+    expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE)
+    access_token = create_token(data={"username": credentials.username}, expire_delta=expires)
+    return {"access_token": access_token, "token_type": "bearer"}
 
-    return {"message": "Successful Login!"}
 
+@app.get("/protected")
+def protected_route(token: str = Depends(oauth2_scheme)):
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
+        username = payload.get("username")
 
+        return {"message": f"Protected route accessed by {username}"}
+    except jwt.PyJWTError:
+        raise HTTPException(status_code=401, detail="Invalid token")
