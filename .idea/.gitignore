@@ -1,3 +1,5 @@
 # Default ignored files
 /shelf/
 /workspace.xml
+/models/__pycache__
+/Routes/__pycache__
