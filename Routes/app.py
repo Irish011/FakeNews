@@ -1,5 +1,5 @@
+from fastapi import FastAPI, Depends, HTTPException, Request, Response, Form
 import fastapi
-from fastapi import FastAPI, Depends, HTTPException, Request, Response
 from fastapi.security import OAuth2PasswordBearer
 import jwt
 from passlib.context import CryptContext
@@ -7,6 +7,7 @@ from datetime import datetime, timedelta
 from models import users, userinfo
 from fastapi.templating import Jinja2Templates
 import email_validator
+from pydantic import EmailStr
 from passlib import hash
 
 from sqlalchemy.orm import Session
@@ -46,32 +47,31 @@ def registration_page(request: Request):
     return templates.TemplateResponse("registration.html", {"request": request})
 
 
-pwd_hashing = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
-
-@app.get("/hash")
 def get_hash(password: str):
+    pwd_hashing = CryptContext(schemes=["bcrypt"], deprecated="auto")
     hash_pass = pwd_hashing.hash(password)
     return hash_pass
 
 
 @app.post("/register")
-# password hashing
-# hashed_password = hash.bcrypt.hash(user.password)
-
-def register_user(request: users.User, db: Session = Depends(get_db)):
+def register_user(name: str = Form('name'), email: EmailStr = Form('email'), password: str = Form('password'), db: Session = Depends(get_db)):
     # email validation
     try:
-        valid = email_validator.validate_email(email=users.User.email)
+        valid = email_validator.validate_email(email=email)
 
     except email_validator.EmailNotValidError:
         raise fastapi.HTTPException(status_code=404, detail="Invalid email")
-    hashed_password = get_hash(request.password)
-    user = userinfo.User(username=request.email, password=hashed_password)
+
+    #Password Hashing
+    hashed_password = get_hash(password)
+    user = userinfo.User(name=name, email=valid.email, password=hashed_password)
+
+# password hashing
+# hashed_password = hash.bcrypt.hash(user.password)
     db.add(user)
     db.commit()
     db.refresh(user)
-    return "Registered Successfully"
+    return "valid"
 
 
 @app.get("/login")
