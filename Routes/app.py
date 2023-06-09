@@ -45,7 +45,7 @@ async def register_user(user: users.UserLogin):
         raise fastapi.HTTPException(status_code=404,detail="Invalid email")
 
     # password hashing
-    hashed_password = hash.bcrypt.hash(user.password,)
+    hashed_password = hash.bcrypt.hash(user.password)
 
 
     expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE)
