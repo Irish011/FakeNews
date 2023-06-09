@@ -1,3 +1,4 @@
+import fastapi
 from fastapi import FastAPI, Depends, HTTPException, Request, Response
 from fastapi.security import OAuth2PasswordBearer
 import jwt
@@ -5,6 +6,8 @@ from datetime import datetime, timedelta
 from pydantic import BaseModel
 from models import users
 from fastapi.templating import Jinja2Templates
+import email_validator
+from passlib import hash
 
 # from models.users import UserLogin
 
@@ -28,14 +31,25 @@ def create_token(data: dict, expire_delta: timedelta):
 
 
 @app.get("/register")
-def reg(request: Request):
+def register(request: Request):
     return templates.TemplateResponse("registration.html", {"request": request})
 
 
 @app.post("/register")
-async def register_user(credentials: users.UserLogin):
+async def register_user(user: users.UserLogin):
+    # email validation
+    try:
+        valid = email_validator.validate_email(email=user.email)
+
+    except email_validator.EmailNotValidError:
+        raise fastapi.HTTPException(status_code=404,detail="Invalid email")
+
+    # password hashing
+    hashed_password = hash.bcrypt.hash(user.password,)
+
+
     expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE)
-    access_token = create_token(data={"username": credentials.username}, expire_delta=expires)
+    access_token = create_token(data={"username": user.email}, expire_delta=expires)
     return {"access_token": access_token, "token_type": "bearer"}
 
 
@@ -47,5 +61,5 @@ def login_page(request: Request):
 @app.post("/login")
 async def user_login(credentials: users.UserLogin):
     expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE)
-    access_token = create_token(data={"username": credentials.username}, expire_delta=expires)
+    access_token = create_token(data={"username": credentials.email}, expire_delta=expires)
     return {"access_token": access_token, "token_type": "bearer"}
