@@ -1,14 +1,16 @@
 from fastapi import FastAPI, Depends, HTTPException, Request, Response
 from fastapi.security import OAuth2PasswordBearer
 import jwt
+from passlib.context import CryptContext
 from datetime import datetime, timedelta
-from pydantic import BaseModel
-from models import users
+from models import users, userinfo
 from fastapi.templating import Jinja2Templates
-
-# from models.users import UserLogin
+from sqlalchemy.orm import Session
+from models.database import engine, sessionLocal
 
 app = FastAPI()
+
+userinfo.Base.metadata.create_all(engine)
 
 SECRET_KEY = "87f2c2be95c484df33a2a438a8a0284bd0cf79d8497d1b53e20f3ba9162b5e6e"
 
@@ -17,6 +19,14 @@ ACCESS_TOKEN_EXPIRE = 30
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/login")
 
 templates = Jinja2Templates(directory="view")
+
+
+def get_db():
+    db = sessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
 
 
 def create_token(data: dict, expire_delta: timedelta):
@@ -28,15 +38,27 @@ def create_token(data: dict, expire_delta: timedelta):
 
 
 @app.get("/register")
-def reg(request: Request):
+def registration_page(request: Request):
     return templates.TemplateResponse("registration.html", {"request": request})
 
 
+pwd_hashing = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+
+@app.get("/hash")
+def get_hash(password: str):
+    hash_pass = pwd_hashing.hash(password)
+    return hash_pass
+
+
 @app.post("/register")
-async def register_user(credentials: users.UserLogin):
-    expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE)
-    access_token = create_token(data={"username": credentials.username}, expire_delta=expires)
-    return {"access_token": access_token, "token_type": "bearer"}
+def register_user(request: users.User, db: Session = Depends(get_db)):
+    hashed_password = get_hash(request.password)
+    user = userinfo.User(username=request.username, password=hashed_password)
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    return "Registered Successfully"
 
 
 @app.get("/login")
