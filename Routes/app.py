@@ -1,10 +1,15 @@
 from fastapi import FastAPI, Depends, HTTPException, Request, Response, Form
+import fastapi
 from fastapi.security import OAuth2PasswordBearer
 import jwt
 from passlib.context import CryptContext
 from datetime import datetime, timedelta
 from models import users, userinfo
 from fastapi.templating import Jinja2Templates
+import email_validator
+from pydantic import EmailStr
+from passlib import hash
+
 from sqlalchemy.orm import Session
 from models.database import engine, sessionLocal
 
@@ -49,13 +54,24 @@ def get_hash(password: str):
 
 
 @app.post("/register")
-def register_user(username: str = Form('username'), password: str = Form('password'), db: Session = Depends(get_db)):
+def register_user(name: str = Form('name'), email: EmailStr = Form('email'), password: str = Form('password'), db: Session = Depends(get_db)):
+    # email validation
+    try:
+        valid = email_validator.validate_email(email=email)
+
+    except email_validator.EmailNotValidError:
+        raise fastapi.HTTPException(status_code=404, detail="Invalid email")
+
+    #Password Hashing
     hashed_password = get_hash(password)
-    user = userinfo.User(username=username, password=hashed_password)
+    user = userinfo.User(name=name, email=valid.email, password=hashed_password)
+
+# password hashing
+# hashed_password = hash.bcrypt.hash(user.password)
     db.add(user)
     db.commit()
     db.refresh(user)
-    return "Registered Successfully"
+    return "valid"
 
 
 @app.get("/login")
@@ -66,5 +82,5 @@ def login_page(request: Request):
 @app.post("/login")
 async def user_login(credentials: users.UserLogin):
     expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE)
-    access_token = create_token(data={"username": credentials.username}, expire_delta=expires)
+    access_token = create_token(data={"username": credentials.email}, expire_delta=expires)
     return {"access_token": access_token, "token_type": "bearer"}
