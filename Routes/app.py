@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Depends, HTTPException, Request, Response
+from fastapi import FastAPI, Depends, HTTPException, Request, Response, Form
 from fastapi.security import OAuth2PasswordBearer
 import jwt
 from passlib.context import CryptContext
@@ -42,19 +42,16 @@ def registration_page(request: Request):
     return templates.TemplateResponse("registration.html", {"request": request})
 
 
-pwd_hashing = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
-
-@app.get("/hash")
 def get_hash(password: str):
+    pwd_hashing = CryptContext(schemes=["bcrypt"], deprecated="auto")
     hash_pass = pwd_hashing.hash(password)
     return hash_pass
 
 
 @app.post("/register")
-def register_user(request: users.User, db: Session = Depends(get_db)):
-    hashed_password = get_hash(request.password)
-    user = userinfo.User(username=request.username, password=hashed_password)
+def register_user(username: str = Form('username'), password: str = Form('password'), db: Session = Depends(get_db)):
+    hashed_password = get_hash(password)
+    user = userinfo.User(username=username, password=hashed_password)
     db.add(user)
     db.commit()
     db.refresh(user)
