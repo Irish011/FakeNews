@@ -1,19 +1,26 @@
-from fastapi import FastAPI, Depends, HTTPException, Request, Response, Form
 import fastapi
+from fastapi import FastAPI, Depends, HTTPException, Request, Response, Form, status
 from fastapi.security import OAuth2PasswordBearer
+from fastapi.templating import Jinja2Templates
+from fastapi.responses import RedirectResponse, HTMLResponse
 import jwt
 from passlib.context import CryptContext
-from datetime import datetime, timedelta
 from models import users, userinfo
-from fastapi.templating import Jinja2Templates
+
 import email_validator
 from pydantic import EmailStr
 from passlib import hash
+
+# from middleware.token_middleware import TokenMiddleware
+from middleware.token_middleware import TestMiddleware
+from middleware.token_middleware import AuthenticationMiddleware
 
 from sqlalchemy.orm import Session
 from models.database import engine, sessionLocal
 
 app = FastAPI()
+
+app.add_middleware(TestMiddleware)
 
 userinfo.Base.metadata.create_all(engine)
 
@@ -34,12 +41,10 @@ def get_db():
         db.close()
 
 
-def create_token(data: dict, expire_delta: timedelta):
-    to_encode = data.copy()
-    expire = datetime.utcnow() + expire_delta
-    to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm="HS256")
-    return encoded_jwt
+def generate_token(emailid: str) -> str:
+    payload = {"emailID": emailid}
+    token = jwt.encode(payload, SECRET_KEY, algorithm="HS256")
+    return token
 
 
 @app.get("/register")
@@ -54,7 +59,8 @@ def get_hash(password: str):
 
 
 @app.post("/register")
-def register_user(name: str = Form('name'), email: EmailStr = Form('email'), password: str = Form('password'), db: Session = Depends(get_db)):
+def register_user(name: str = Form('name'), email: EmailStr = Form('email'), password: str = Form('password'),
+                  db: Session = Depends(get_db)):
     # email validation
     try:
         valid = email_validator.validate_email(email=email)
@@ -62,12 +68,10 @@ def register_user(name: str = Form('name'), email: EmailStr = Form('email'), pas
     except email_validator.EmailNotValidError:
         raise fastapi.HTTPException(status_code=404, detail="Invalid email")
 
-    #Password Hashing
+    # Password Hashing
     hashed_password = get_hash(password)
     user = userinfo.User(name=name, email=valid.email, password=hashed_password)
 
-# password hashing
-# hashed_password = hash.bcrypt.hash(user.password)
     db.add(user)
     db.commit()
     db.refresh(user)
@@ -79,8 +83,45 @@ def login_page(request: Request):
     return templates.TemplateResponse("login.html", {"request": request})
 
 
+def verify_hash(password: str, hash_password: str) -> bool:
+    pass_hash = CryptContext(schemes=["bcrypt"])
+    return pass_hash.verify(password, hash_password)
+
+
+def authenticate_user(email: str, password: str) -> bool:
+    db = sessionLocal()
+    user = db.query(userinfo.User).filter(userinfo.User.email == email).first()
+    db.close()
+    if user and verify_hash(password, user.password):
+        return True
+    return False
+
+
 @app.post("/login")
-async def user_login(credentials: users.UserLogin):
-    expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE)
-    access_token = create_token(data={"username": credentials.email}, expire_delta=expires)
-    return {"access_token": access_token, "token_type": "bearer"}
+def user_login(email: str = Form('email'), password: str = Form("password")):
+    if authenticate_user(email, password):
+        token = generate_token(email)
+        response = RedirectResponse(url="/dashboard", status_code=status.HTTP_303_SEE_OTHER)
+        response.set_cookie(key="token", value=token, httponly=True)
+        return response
+    else:
+        raise HTTPException(status_code=401, detail="Invalid username or password")
+
+
+@app.get("/")
+def home(request: Request):
+    return 'Welcome'
+
+
+@app.get("/dashboard")
+def dashboard(request: Request, response: Response):
+    username = AuthenticationMiddleware.authMiddle(request, response)
+    if isinstance(username, Response): return username
+    print(username)
+    return f"Welcome {username}"
+
+
+@app.get("/testing")
+def controll_test(request: Request):
+    print(request)
+    return {"message": "working"}
