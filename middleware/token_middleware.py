@@ -36,8 +36,7 @@ class TestMiddleware(BaseHTTPMiddleware):
             request.state.username = username
             print(f'inside {request.url.path} ')
             print(request)
-            response = await call_next(request)
-            return response
-        else:
-            response = await call_next(request)
-            return response
+            # response = await call_next(request)
+            # return response
+        response = await call_next(request)
+        return response
