@@ -1,5 +1,7 @@
 import fastapi
 import email_validator
+import tweepy
+import config
 
 from fastapi import FastAPI, Depends, HTTPException, Request, Form, status
 from fastapi.templating import Jinja2Templates
@@ -24,7 +26,8 @@ def registration_page(request: Request):
 
 
 @app.post("/register")
-def user_register(name: str = Form('name'), email: EmailStr = Form('email'), password: str = Form('password'), db: Session = Depends(get_db)):
+def user_register(name: str = Form('name'), email: EmailStr = Form('email'), password: str = Form('password'),
+                  db: Session = Depends(get_db)):
     # email validation
     try:
         valid = email_validator.validate_email(email=email)
@@ -58,6 +61,7 @@ def user_login(email: str = Form('email'), password: str = Form("password")):
     else:
         raise HTTPException(status_code=401, detail="Invalid username or password")
 
+
 # Using static method
 # @app.get("/dashboard")
 # def dashboard(request: Request, response: Response):
@@ -73,3 +77,20 @@ def user_dashboard(request: Request):
     print(username)
     return f"Welcome {username}"
 
+
+client = tweepy.Client(bearer_token=config.BEARER_TOKEN)
+
+query = 'covid OR covid19'
+
+client.search_recent_tweets(query=query)
+print(client)
+
+# auth = tweepy.OAuth1UserHandler(consumer_key, consumer_secret, access_token, access_token_secret)
+# api = tweepy.API(auth)
+#
+# public_tweets = api.home_timeline()
+# for tweet in public_tweets:
+#     print(tweet.text)
+#
+# @app.get("/twitter")
+# def show_tweets():
