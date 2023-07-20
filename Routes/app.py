@@ -6,7 +6,7 @@ from fastapi.templating import Jinja2Templates
 from fastapi.responses import RedirectResponse
 from pydantic import EmailStr
 from middleware.token_middleware import TestMiddleware
-from models import userinfo
+from models import userinfo, interests
 from sqlalchemy.orm import Session
 from controller.controller import generate_token, get_hash, authenticate_user, get_db
 
@@ -72,4 +72,13 @@ def user_dashboard(request: Request):
     username = request.state.username
     print(username)
     return f"Welcome {username}"
+
+# @app.post("/interests")
+# def interests(email: str = Form('email'), interest: str = Form('interest')):
+# interest= interests.Interests()
+    
+
+@app.get("/interests")
+def load_interests(request: Request):
+    return templates.TemplateResponse("interests.html", {"request": request})
 
