@@ -6,7 +6,7 @@ from fastapi.templating import Jinja2Templates
 from fastapi.responses import RedirectResponse
 from pydantic import EmailStr
 from middleware.token_middleware import TestMiddleware
-from models import userinfo, interests
+from models import userinfo
 from sqlalchemy.orm import Session
 from controller.controller import generate_token, get_hash, authenticate_user, get_db
 
@@ -24,7 +24,8 @@ def registration_page(request: Request):
 
 
 @app.post("/register")
-def user_register(name: str = Form('name'), email: EmailStr = Form('email'), password: str = Form('password'), db: Session = Depends(get_db)):
+def user_register(name: str = Form('name'), email: EmailStr = Form('email'), password: str = Form('password'),
+                  db: Session = Depends(get_db)):
     # email validation
     try:
         valid = email_validator.validate_email(email=email)
@@ -58,6 +59,7 @@ def user_login(email: str = Form('email'), password: str = Form("password")):
     else:
         raise HTTPException(status_code=401, detail="Invalid username or password")
 
+
 # Using static method
 # @app.get("/dashboard")
 # def dashboard(request: Request, response: Response):
@@ -73,12 +75,23 @@ def user_dashboard(request: Request):
     print(username)
     return f"Welcome {username}"
 
-# @app.post("/interests")
-# def interests(email: str = Form('email'), interest: str = Form('interest')):
-# interest= interests.Interests()
-    
 
 @app.get("/interests")
 def load_interests(request: Request):
     return templates.TemplateResponse("interests.html", {"request": request})
 
+
+# @app.post("/interests")
+# def interests(request: Request, interest: str = Form('interest'), db: Session = Depends(get_db)):
+#     username = request.state.username
+#
+#     db_item = db.query(userinfo.User).filter(userinfo.User.email == username).first()
+#
+#     if not db_item:
+#         raise HTTPException(status_code=404, detail="Not found")
+#
+#     db_item.interests = interest
+#
+#     db.commit()
+#     db.refresh(db_item)
+#     return db_item
