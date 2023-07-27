@@ -5,7 +5,6 @@ from starlette.responses import RedirectResponse
 
 SECRET_KEY = "87f2c2be95c484df33a2a438a8a0284bd0cf79d8497d1b53e20f3ba9162b5e6e"
 
-
 # Using static method for getting values
 
 # class AuthenticationMiddleware:
@@ -25,7 +24,7 @@ SECRET_KEY = "87f2c2be95c484df33a2a438a8a0284bd0cf79d8497d1b53e20f3ba9162b5e6e"
 class TestMiddleware(BaseHTTPMiddleware):
 
     async def dispatch(self, request: Request, call_next):
-        urls = ["/dashboard", "/interests"]
+        urls = ["/dashboard"]
         if request.url.path in urls:
             token = request.cookies.get("token")
             if token is None:
