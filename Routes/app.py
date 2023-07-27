@@ -1,14 +1,5 @@
 import fastapi
 import email_validator
-import pickle
-import nltk
-import pandas as pd
-import string
-import re
-from supervised import AutoML
-from sklearn.feature_extraction.text import TfidfVectorizer
-# from models import fakenewsdetector
-
 from fastapi import FastAPI, Depends, HTTPException, Request, Form, status
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import RedirectResponse
@@ -18,23 +9,32 @@ from models import userinfo
 from sqlalchemy.orm import Session
 from controller.controller import generate_token, get_hash, authenticate_user, get_db
 
+import pickle
+import re
+import nltk
+import numpy as np
+from sklearn.feature_extraction.text import TfidfVectorizer
+import string
+
 nltk.download('stopwords')
+
+with open('tfidf_vectorizer.pkl', 'rb') as file:
+    vectorizer = pickle.load(file)
+
+with open('automl_model.pkl', 'rb') as file:
+    model = pickle.load(file)
+
 stopwords = nltk.corpus.stopwords.words('english')
 
-app = FastAPI()
 
-model = AutoML()
-with open('automl-CatBoost-Data500.pkl', 'rb') as file:
-    model=pickle.load(file)
-    
 def clean_text(text):
     text = "".join([word.lower() for word in text if word not in string.punctuation])
     tokens = re.split('\W+', text)
     text = [word for word in tokens if word not in stopwords]
-    return text
+    return " ".join(text)
 
-class PredictionRequest(BaseModel):
-    text:str
+
+app = FastAPI()
 
 # Middleware to be used
 app.add_middleware(TestMiddleware)
@@ -42,32 +42,14 @@ app.add_middleware(TestMiddleware)
 templates = Jinja2Templates(directory="view")
 
 
-# def predict_news(text):
-#     preprocessed_text = fakenewsdetector.clean_text(text)
-    
-#     predictions = model.predict(preprocessed_text)
-    
-#     return predictions
-
-
-@app.post("/predict")
-def predict(fake_news: PredictionRequest):
-    text = fake_news.text
-    cleaned_text = clean_text(text)
-    
-    vectorizer = TfidfVectorizer()
-    X = vectorizer.fit_transform([cleaned_text])
-    prediction = model.predict(X.toarray())
-    
-    return {"prediction": prediction[0]}
-
 @app.get("/register")
 def registration_page(request: Request):
     return templates.TemplateResponse("registration.html", {"request": request})
 
 
 @app.post("/register")
-def user_register(name: str = Form('name'), email: EmailStr = Form('email'), password: str = Form('password'), db: Session = Depends(get_db)):
+def user_register(name: str = Form('name'), email: EmailStr = Form('email'), password: str = Form('password'),
+                  db: Session = Depends(get_db)):
     # email validation
     try:
         valid = email_validator.validate_email(email=email)
@@ -101,6 +83,7 @@ def user_login(email: str = Form('email'), password: str = Form("password")):
     else:
         raise HTTPException(status_code=401, detail="Invalid username or password")
 
+
 # Using static method
 # @app.get("/dashboard")
 # def dashboard(request: Request, response: Response):
@@ -116,3 +99,22 @@ def user_dashboard(request: Request):
     print(username)
     return f"Welcome {username}"
 
+
+@app.get("/predict")
+def predict(request: Request):
+    return templates.TemplateResponse("dashBoard.html", {"request": request})
+
+
+@app.post("/predict")
+def predict_model(news: str = Form('news')):
+    cleaned_text = clean_text(news)
+    x = vectorizer.transform([cleaned_text])
+
+    prediction = model.predict(x.toarray())
+
+    prediction2 = int(prediction[0])
+
+    if prediction2 == 0:
+        return {"prediction": "Real"}
+    else:
+        return {"prediction": "False"}

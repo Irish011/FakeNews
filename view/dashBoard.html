@@ -1,0 +1,60 @@
+<html>
+    <head>
+        <title>DasBoard@FakeNews</title>
+<!--        <link rel="stylesheet" href="./dashBoard.css" >-->
+
+        <style>
+            body{
+                margin: 0;
+                width: 100%;
+                height: 100%;
+            }
+
+            .container{
+               height: 32%;
+                width: 100%;
+                background-image: url(https://wexnermedical.osu.edu/-/media/images/wexnermedical/blog/2020-stories/04/fake-news-about-covid-19/coronavirus-news_small.jpg);
+            }
+
+            .prediction{
+               margin-left: 50%;
+                margin: 40px 5px 40px 350px ;
+                border-radius: 2rem;
+                height: 5vh;
+                width: 65vh;
+                border-style: solid;
+                border-color: black;
+            }
+             .submit{
+                border-radius: 2rem;
+                height: 6vh;
+                width: 12vh;
+                background-color: deepskyblue;
+                color: white;
+                border-style: solid;
+                border-color: black;
+             }
+             .label{
+                /* display: block; */
+                padding: 6px 16px 6px 16px;
+                font-size: medium;
+                margin-left: 43%;
+                border-style: solid;
+                border-radius: 2rem;
+                background-color: white;
+             }
+        </style>
+    </head>
+        <body>
+            <div class="container">
+                <form method="post" action="/predict">
+
+
+                <input type="text" name="news" class="prediction"/><input type="button" value="Predict" class="submit" /><br>
+                <label class="label"> Fake </label><br><br><br>
+                </form>
+            </div>
+
+        </body>
+
+</html>
