@@ -24,7 +24,8 @@ def registration_page(request: Request):
 
 
 @app.post("/register")
-def user_register(name: str = Form('name'), email: EmailStr = Form('email'), password: str = Form('password'), db: Session = Depends(get_db)):
+def user_register(name: str = Form('name'), email: EmailStr = Form('email'), password: str = Form('password'),
+                  db: Session = Depends(get_db)):
     # email validation
     try:
         valid = email_validator.validate_email(email=email)
@@ -58,6 +59,7 @@ def user_login(email: str = Form('email'), password: str = Form("password")):
     else:
         raise HTTPException(status_code=401, detail="Invalid username or password")
 
+
 # Using static method
 # @app.get("/dashboard")
 # def dashboard(request: Request, response: Response):
@@ -72,4 +74,11 @@ def user_dashboard(request: Request):
     username = request.state.username
     print(username)
     return f"Welcome {username}"
+
+
+@app.get("/interests")
+def load_interests(request: Request):
+    return templates.TemplateResponse("interests.html", {"request": request})
+
+
 
