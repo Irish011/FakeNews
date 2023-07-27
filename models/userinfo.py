@@ -7,3 +7,8 @@ class User(Base):
     name = Column(String)
     email = Column(String)
     password = Column(String)
+    interests = Column(String)
+
+# class InterestBase(BaseModel):
+#     name: str
+

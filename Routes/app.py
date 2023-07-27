@@ -10,7 +10,11 @@ from models import userinfo
 from sqlalchemy.orm import Session
 from controller.controller import generate_token, get_hash, authenticate_user, get_db
 
+from models.database import engine
+
 app = FastAPI()
+
+userinfo.Base.metadata.create_all(engine)
 
 # Middleware to be used
 app.add_middleware(TestMiddleware)
@@ -24,7 +28,8 @@ def registration_page(request: Request):
 
 
 @app.post("/register")
-def user_register(name: str = Form('name'), email: EmailStr = Form('email'), password: str = Form('password'), db: Session = Depends(get_db)):
+def user_register(name: str = Form('name'), email: EmailStr = Form('email'), password: str = Form('password'),
+                  db: Session = Depends(get_db)):
     # email validation
     try:
         valid = email_validator.validate_email(email=email)
@@ -34,7 +39,7 @@ def user_register(name: str = Form('name'), email: EmailStr = Form('email'), pas
 
     # Password Hashing
     hashed_password = get_hash(password)
-    user = userinfo.User(name=name, email=valid.email, password=hashed_password)
+    user = userinfo.User(name=name, email=valid.email, password=hashed_password, interests=" ")
 
     db.add(user)
     db.commit()
@@ -58,6 +63,7 @@ def user_login(email: str = Form('email'), password: str = Form("password")):
     else:
         raise HTTPException(status_code=401, detail="Invalid username or password")
 
+
 # Using static method
 # @app.get("/dashboard")
 # def dashboard(request: Request, response: Response):
@@ -77,3 +83,25 @@ def user_dashboard(request: Request):
 @app.get("/interests")
 def load_interests(request: Request):
     return templates.TemplateResponse("interests.html", {"request": request})
+
+
+#
+
+
+@app.post("/interests")
+def add_interests(request: Request, politics: str = Form('politics'), db: Session = Depends(get_db)):
+    if not politics:
+        pass
+    else:
+        username = request.state.username
+
+        db_item = db.query(userinfo.User).filter(userinfo.User.email == username).first()
+
+        if not db_item:
+            raise HTTPException(status_code=404, detail="Not Found")
+
+        db_item.interests = politics
+
+        db.commit()
+        db.refresh(db_item)
+        return {"Added at": db_item.email}
