@@ -73,3 +73,7 @@ def user_dashboard(request: Request):
     print(username)
     return f"Welcome {username}"
 
+
+@app.get("/interests")
+def load_interests(request: Request):
+    return templates.TemplateResponse("interests.html", {"request": request})
