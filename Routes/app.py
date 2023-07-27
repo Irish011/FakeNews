@@ -81,17 +81,4 @@ def load_interests(request: Request):
     return templates.TemplateResponse("interests.html", {"request": request})
 
 
-# @app.post("/interests")
-# def interests(request: Request, interest: str = Form('interest'), db: Session = Depends(get_db)):
-#     username = request.state.username
-#
-#     db_item = db.query(userinfo.User).filter(userinfo.User.email == username).first()
-#
-#     if not db_item:
-#         raise HTTPException(status_code=404, detail="Not found")
-#
-#     db_item.interests = interest
-#
-#     db.commit()
-#     db.refresh(db_item)
-#     return db_item
+
