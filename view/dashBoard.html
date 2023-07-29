@@ -1,7 +1,6 @@
 <html>
     <head>
         <title>DasBoard@FakeNews</title>
-<!--        <link rel="stylesheet" href="./dashBoard.css" >-->
 
         <style>
             body{
@@ -48,13 +47,30 @@
         <body>
             <div class="container">
                 <form method="post" action="/predict">
-
-
-                <input type="text" name="news" class="prediction"/><input type="button" value="Predict" class="submit" /><br>
-                <label class="label"> Fake </label><br><br><br>
+                    <input type="text" id="inputText" name="news" class="prediction" />
+                    <input type="submit" value="Predict" class="submit" onclick="updateLabel()" /><br>
+                    <label id="displayLabel" class="label"> Fake </label><br><br><br>
                 </form>
             </div>
 
         </body>
+
+        <script>
+            function updateLabel(result) {
+                const displayLabel = document.getElementById("displayLabel");
+                displayLabel.textContent = result;
+            }
+
+            function predict(){
+                const inputText = document.getElementById("inputText").value;
+                fetch("/predict", {
+                    method: "POST",
+                    body: `news=${encodeURIComponent(inputText)}`,
+                })
+                .then(response => response.text())
+                .then(result=> updateLabel(result))
+                .catch(error => console.error(error));
+            }
+        </script>
 
 </html>
