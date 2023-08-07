@@ -3,3 +3,6 @@
 /workspace.xml
 /models/__pycache__
 /Routes/__pycache__
+/controller/__pycache__
+/middleware/__pycache__
+/modela/__pycache__
