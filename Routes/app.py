@@ -1,8 +1,5 @@
 import fastapi
 import email_validator
-import re
-import nltk
-import string
 import pickle
 import os
 
@@ -10,37 +7,44 @@ from fastapi import FastAPI, Depends, HTTPException, Request, Form, status
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import RedirectResponse
 from pydantic import EmailStr
+from models.cleaning import clean_text
 from middleware.token_middleware import TestMiddleware
 from models import userinfo
 from sqlalchemy.orm import Session
+# from pydrive.auth import GoogleAuth
+# from pydrive.drive import GoogleDrive
 from controller.controller import generate_token, get_hash, authenticate_user, get_db
 
 app = FastAPI()
 
-nltk.download('stopwords')
+# gauth = GoogleAuth()
+# gauth.LocalWebserverAuth()
+
+# drive = GoogleDrive(gauth)
+
+# model_file_id = '10Pf6Hbz-tUSPp7oL6E1a2Cfau_an1I_U'
+# model_file_1 = drive.CreateFile({'id': model_file_id})
+# model_path = model_file_1.GetContentFile('automl_model.pkl')
+
+# vectorizer_file_id = '1cYd3Su5JsM2DMsnBXP81wBeNJov-7NxB'
+# vectorizer_file_1 = drive.CreateFile({'id': vectorizer_file_id})
+# vectorizer_path = vectorizer_file_1.GetContentFile('tfidf_vectorizer.pkl')
 
 # Middleware to be used
 app.add_middleware(TestMiddleware)
 
 templates = Jinja2Templates(directory="view")
 
-vectorizer_path = os.path.abspath("Routes/tfidf_vectorizer.pkl")
-model_path = os.path.abspath("Routes/automl_model.pkl")
+#Local Downloaded File
+
+vectorizer_path = os.path.abspath("C:\\Users\\Irish\\Downloads\\fakenewsproject\\tfidf_vectorizer.pkl")
+model_path = os.path.abspath("C:\\Users\\Irish\\Downloads\\fakenewsproject\\automl_model.pkl")
 
 with open(vectorizer_path, 'rb') as vectorizer_file:
     vectorizer = pickle.load(vectorizer_file)
 
 with open(model_path, 'rb') as model_file:
     model = pickle.load(model_file)
-
-stopwords = nltk.corpus.stopwords.words('english')
-
-
-def clean_text(text):
-    text = "".join([word.lower() for word in text if word not in string.punctuation])
-    tokens = re.split('\W+', text)
-    text = [word for word in tokens if word not in stopwords]
-    return " ".join(text)
 
 
 @app.get("/register")
