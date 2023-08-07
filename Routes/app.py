@@ -93,7 +93,6 @@ def user_dashboard(request: Request):
     print(username)
     return f"Welcome {username}"
 
-<<<<<<< HEAD
 @app.get("/predict")
 def predict_news(request: Request):
     return templates.TemplateResponse("dashBoard.html", {"request": request})
@@ -107,9 +106,7 @@ def predicted_news(request: Request, news: str = Form('news')):
     prediction_result = "Real" if int(prediction[0]) == 0 else "Fake"
 
     return templates.TemplateResponse("dashBoard.html", {"request": request, "News_Prediction": prediction_result})
-=======
 
 @app.get("/interests")
 def load_interests(request: Request):
     return templates.TemplateResponse("interests.html", {"request": request})
->>>>>>> main
