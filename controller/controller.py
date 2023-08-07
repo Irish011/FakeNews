@@ -21,8 +21,9 @@ def generate_token(emailid: str) -> str:
 
 
 def get_hash(password: str):
-    pwd_hashing = CryptContext(schemes=["bcrypt"], deprecated="auto")
-    hash_pass = pwd_hashing.hash(password)
+    hash_pass = CryptContext(scheme=["bcrypt"], deprecated="auto").hash(password)
+#     pwd_hashing = CryptContext(schemes=["bcrypt"], deprecated="auto")
+#     hash_pass = pwd_hashing.hash(password)
     return hash_pass
 
 
