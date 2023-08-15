@@ -39,7 +39,7 @@ def user_register(name: str = Form('name'), email: EmailStr = Form('email'), pas
 
     # Password Hashing
     hashed_password = get_hash(password)
-    user = userinfo.User(name=name, email=valid.email, password=hashed_password, interests=" ")
+    user = userinfo.User(name=name, email=valid.email, password=hashed_password, interests="")
 
     db.add(user)
     db.commit()
@@ -89,8 +89,8 @@ def load_interests(request: Request):
 
 
 @app.post("/interests")
-def add_interests(request: Request, politics: str = Form('politics'), db: Session = Depends(get_db)):
-    if not politics:
+def add_interests(request: Request, interest: str = Form('interest'), db: Session = Depends(get_db)):
+    if not interest:
         pass
     else:
         username = request.state.username
@@ -100,7 +100,7 @@ def add_interests(request: Request, politics: str = Form('politics'), db: Sessio
         if not db_item:
             raise HTTPException(status_code=404, detail="Not Found")
 
-        db_item.interests = politics
+        db_item.interests = interest
 
         db.commit()
         db.refresh(db_item)
