@@ -1,0 +1,16 @@
+Index: Routes/app.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>import fastapi\nimport email_validator\n\nfrom fastapi import FastAPI, Depends, HTTPException, Request, Form, status\nfrom fastapi.templating import Jinja2Templates\nfrom fastapi.responses import RedirectResponse\nfrom pydantic import EmailStr\nfrom middleware.token_middleware import TestMiddleware\nfrom models import userinfo\nfrom sqlalchemy.orm import Session\nfrom controller.controller import generate_token, get_hash, authenticate_user, get_db\n\napp = FastAPI()\n\n# Middleware to be used\napp.add_middleware(TestMiddleware)\n\ntemplates = Jinja2Templates(directory=\"view\")\n\n\n@app.get(\"/register\")\ndef registration_page(request: Request):\n    return templates.TemplateResponse(\"registration.html\", {\"request\": request})\n\n\n@app.post(\"/register\")\ndef user_register(name: str = Form('name'), email: EmailStr = Form('email'), password: str = Form('password'),\n                  db: Session = Depends(get_db)):\n    # email validation\n    try:\n        valid = email_validator.validate_email(email=email)\n\n    except email_validator.EmailNotValidError:\n        raise fastapi.HTTPException(status_code=404, detail=\"Invalid email\")\n\n    # Password Hashing\n    hashed_password = get_hash(password)\n    user = userinfo.User(name=name, email=valid.email, password=hashed_password)\n\n    db.add(user)\n    db.commit()\n    db.refresh(user)\n    response = RedirectResponse(url=\"/login\", status_code=status.HTTP_303_SEE_OTHER)\n    return response\n\n\n@app.get(\"/login\")\ndef login_page(request: Request):\n    return templates.TemplateResponse(\"login.html\", {\"request\": request})\n\n\n@app.post(\"/login\")\ndef user_login(email: str = Form('email'), password: str = Form(\"password\")):\n    if authenticate_user(email, password):\n        token = generate_token(email)\n        response = RedirectResponse(url=\"/dashboard\", status_code=status.HTTP_303_SEE_OTHER)\n        response.set_cookie(key=\"token\", value=token, httponly=True)\n        return response\n    else:\n        raise HTTPException(status_code=401, detail=\"Invalid username or password\")\n\n\n# Using static method\n# @app.get(\"/dashboard\")\n# def dashboard(request: Request, response: Response):\n#     username = AuthenticationMiddleware.authMiddle(request, response)\n#     if isinstance(username, Response): return username\n#     print(username)\n#     return f\"Welcome {username}\"\n\n\n@app.get(\"/dashboard\")\ndef user_dashboard(request: Request):\n    username = request.state.username\n    print(username)\n    return f\"Welcome {username}\"\n\n\n@app.get(\"/interests\")\ndef load_interests(request: Request):\n    return templates.TemplateResponse(\"interests.html\", {\"request\": request})\n\n\n\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/Routes/app.py b/Routes/app.py
+--- a/Routes/app.py	(revision 1f9690ae52ccc6f179b0f7e6288656b27848f8c9)
++++ b/Routes/app.py	(date 1690456406339)
+@@ -80,5 +80,3 @@
+ def load_interests(request: Request):
+     return templates.TemplateResponse("interests.html", {"request": request})
+ 
+-
+-

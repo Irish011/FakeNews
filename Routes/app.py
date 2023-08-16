@@ -35,7 +35,7 @@ app.add_middleware(TestMiddleware)
 
 templates = Jinja2Templates(directory="view")
 
-#Local Downloaded File
+# Local Downloaded File
 
 vectorizer_path = os.path.abspath("C:\\Users\\Irish\\Downloads\\fakenewsproject\\tfidf_vectorizer.pkl")
 model_path = os.path.abspath("C:\\Users\\Irish\\Downloads\\fakenewsproject\\automl_model.pkl")
@@ -53,7 +53,8 @@ def registration_page(request: Request):
 
 
 @app.post("/register")
-def user_register(name: str = Form('name'), email: EmailStr = Form('email'), password: str = Form('password'), db: Session = Depends(get_db)):
+def user_register(name: str = Form('name'), email: EmailStr = Form('email'), password: str = Form('password'),
+                  db: Session = Depends(get_db)):
     # email validation
     try:
         valid = email_validator.validate_email(email=email)
@@ -87,15 +88,18 @@ def user_login(email: str = Form('email'), password: str = Form("password")):
     else:
         raise HTTPException(status_code=401, detail="Invalid username or password")
 
+
 @app.get("/dashboard")
 def user_dashboard(request: Request):
     username = request.state.username
     print(username)
     return f"Welcome {username}"
 
+
 @app.get("/predict")
 def predict_news(request: Request):
     return templates.TemplateResponse("dashBoard.html", {"request": request})
+
 
 @app.post("/predict")
 def predicted_news(request: Request, news: str = Form('news')):
@@ -106,6 +110,7 @@ def predicted_news(request: Request, news: str = Form('news')):
     prediction_result = "Real" if int(prediction[0]) == 0 else "Fake"
 
     return templates.TemplateResponse("dashBoard.html", {"request": request, "News_Prediction": prediction_result})
+
 
 @app.get("/interests")
 def load_interests(request: Request):
